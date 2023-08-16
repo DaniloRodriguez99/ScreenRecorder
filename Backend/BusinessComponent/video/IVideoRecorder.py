@@ -6,7 +6,7 @@ from Models.RecordSettings import RecordSettings
 class IVideoRecorder(ABC):
 
      @abstractmethod
-     def Record(self):
+     def Record(self, settings: RecordSettings):
          pass
 
      @abstractmethod

@@ -23,7 +23,7 @@ def handleStartRecord(recordsettings_json):
     print("SOCKET - Start Record")
     recordSettings = RecordSettings.from_json(recordsettings_json)
     videoRecorder = VideoRecord(settings=recordSettings, fileName="Prueba1", socket=socketio)
-    threading.Thread(target=videoRecorder.Record).start()
+    threading.Thread(target=videoRecorder.Record, args=[videoRecorder]).start()
     print("Terminando record_start")
     emit("record_start", True, broadcast=True)
 

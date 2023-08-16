@@ -6,7 +6,7 @@ from Models.ScheduleRecord import ScheduleRecordModel
 
 dateFormat = "%Y-%m-%d %H:%M:%S"
 class SqlLiteDA(IRepository):
-    def __init__(self, db_name="database.db"):
+    def __init__(self, db_name="Database/database.db"):
         self.conn = sqlite3.connect(db_name, check_same_thread=False)
         self.conn.execute("PRAGMA foreign_keys = ON;")
         self.create_tables()

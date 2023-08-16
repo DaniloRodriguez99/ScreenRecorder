@@ -10,6 +10,7 @@ import pyaudio
 import pyautogui
 from flask_socketio import SocketIO
 from moviepy.audio.io.AudioFileClip import AudioFileClip
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from BusinessComponent.video.IVideoRecorder import IVideoRecorder
@@ -39,7 +40,7 @@ class VideoRecord(IVideoRecorder):
         self.socket.emit('record_end', True )
         self.combine_audio_video()
 
-    def Record(self):
+    def Record(self, settings: RecordSettings):
         # Start the threads using threading.Thread
         self.PrintVideoData()
         video_thread = threading.Thread(target=self.record_video)
@@ -57,20 +58,25 @@ class VideoRecord(IVideoRecorder):
     def record_video(self):
         print("Comienza a capturar pantalla")
         start_time = time.time()
-        out = cv2.VideoWriter(self.output_file, self.fourcc, self.recordSettings.fps, self.screen_size)
-
+        videoFrames = []
         try:
             while (time.time() - start_time < self.recordSettings.duration) and (self.wasStopped == False):
                 # Captura de pantalla
                 screenshot = pyautogui.screenshot()
                 frame = cv2.cvtColor(numpy.array(screenshot), cv2.COLOR_RGB2BGR)
-
-                # Escribe el frame en el video
-                out.write(frame)
+                videoFrames.append(frame)
 
         except KeyboardInterrupt:
             print("Error en captura de video")
             pass
+
+        fps = len(videoFrames) / (time.time() - start_time)
+        print("Numeros de imagenes conseguidas:", len(videoFrames))
+        print("Numero de segundos capturados:", round(time.time() - start_time))
+        print("Los fps que se alcanzaron fueron:", fps)
+        out = cv2.VideoWriter(self.output_file, self.fourcc, fps, self.screen_size)
+        for frame in videoFrames:
+            out.write(frame)
 
         out.release()
         cv2.destroyAllWindows()
@@ -122,7 +128,11 @@ class VideoRecord(IVideoRecorder):
         video_clip = VideoFileClip(self.output_file)
         audio_clip = AudioFileClip(self.audio_output_file)
 
-        final_video_clip = video_clip.set_audio(audio_clip)
+        min_duration = min(video_clip.duration, audio_clip.duration)
+        video_clip = video_clip.subclip(0, min_duration)
+        audio_clip = audio_clip.subclip(0, min_duration)
+
+        final_video_clip = CompositeVideoClip([video_clip.set_audio(audio_clip)])
 
         date_format = "%Y-%m-%d %H:%M:%S"
         fecha_actual = datetime.now()
